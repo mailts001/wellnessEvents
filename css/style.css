@@ -1,0 +1,95 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  justify-content: space-around;
+  background: #222;
+  padding: 10px;
+}
+.nav a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+.nav a:hover {
+  color: #ff6600;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  background: #ff6600;
+  color: #fff;
+  padding: 10px 20px;
+  text-decoration: none;
+  margin-top: 10px;
+  border-radius: 5px;
+}
+
+/* Landing Video */
+.landing-video video {
+  width: 100%;
+  max-height: 60vh;
+  object-fit: cover;
+}
+
+/* Quick Links */
+.quick-links {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+/* Services Cards */
+.service-card {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin: 10px;
+  border-radius: 10px;
+}
+
+/* Schedule Table */
+table {
+  width: 90%;
+  margin: 20px auto;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+th {
+  background: #f2f2f2;
+}
+
+/* About Sections */
+.about section {
+  padding: 15px;
+  margin: 10px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .nav {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .quick-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  table, th, td {
+    font-size: 14px;
+  }
+}
