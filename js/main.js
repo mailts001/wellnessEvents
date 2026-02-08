@@ -5,38 +5,90 @@ if (montageContainer) {
   fetch('./media/media.json')
     .then(res => res.json())
     .then(mediaList => {
+
+      if (!mediaList || mediaList.length === 0) return;
+
       let index = 0;
+      let timeoutId = null;
+
+      function nextIndex() {
+        index = (index + 1) % mediaList.length;
+      }
+
+      function clearTimers() {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+      }
 
       function playNext() {
+        clearTimers();
         montageContainer.innerHTML = '';
+
         const item = mediaList[index];
         let el;
 
+        // ---------- VIDEO ----------
         if (item.type === "video") {
+
           el = document.createElement('video');
           el.src = item.src;
           el.autoplay = true;
           el.muted = true;
           el.playsInline = true;
-          el.style.width = "100%";
-          el.style.height = "80vh";
-          el.style.objectFit = "cover";
+          el.controls = false;
+          el.preload = "auto";
 
+          // RESPONSIVE FULL SCREEN
+          el.style.width = "100%";
+          el.style.height = "100vh";
+          el.style.objectFit = "contain";   // prevents bottom cutoff
+          el.style.background = "black";
+
+          // When video finishes normally
           el.onended = () => {
-            index = (index + 1) % mediaList.length;
+            nextIndex();
             playNext();
           };
-        } else {
+
+          // If autoplay blocked OR video error → skip after 4s
+          el.onerror = el.onstalled = () => {
+            timeoutId = setTimeout(() => {
+              nextIndex();
+              playNext();
+            }, 4000);
+          };
+
+          // If mobile blocks autoplay, force play
+          el.oncanplay = () => {
+            const promise = el.play();
+            if (promise !== undefined) {
+              promise.catch(() => {
+                timeoutId = setTimeout(() => {
+                  nextIndex();
+                  playNext();
+                }, 4000);
+              });
+            }
+          };
+        }
+
+        // ---------- IMAGE ----------
+        else {
+
           el = document.createElement('img');
           el.src = item.src;
-          el.style.width = "100%";
-          el.style.height = "65vh";
-          el.style.objectFit = "cover";
 
-          setTimeout(() => {
-            index = (index + 1) % mediaList.length;
+          el.style.width = "100%";
+          el.style.height = "100vh";
+          el.style.objectFit = "contain";
+          el.style.background = "black";
+
+          timeoutId = setTimeout(() => {
+            nextIndex();
             playNext();
-          }, 3000);
+          }, 3500);
         }
 
         montageContainer.appendChild(el);
@@ -45,47 +97,4 @@ if (montageContainer) {
       playNext();
     })
     .catch(err => console.error("Failed to load media.json:", err));
-}
-
-// ===== SERVICES PAGE FORM MODAL =====
-const servicesContainer = document.getElementById("servicesContainer");
-const modal = document.getElementById("formModal");
-const frame = document.getElementById("formFrame");
-const closeBtn = document.getElementById("closeForm");
-
-if (servicesContainer) {
-  fetch('./media/forms.json')
-    .then(res => res.json())
-    .then(forms => {
-      forms.forEach(f => {
-        const card = document.createElement("div");
-        card.className = "service-card";
-
-        card.innerHTML = `
-          <h2>${f.title}</h2>
-          <p>${f.description}</p>
-          <button class="btn open-form" data-form="${f.formUrl}">Open Survey</button>
-        `;
-
-        servicesContainer.appendChild(card);
-      });
-
-      document.querySelectorAll(".open-form").forEach(btn => {
-        btn.addEventListener("click", e => {
-          const url = e.target.dataset.form;
-          frame.src = url;
-          modal.style.display = "flex";
-          document.body.style.overflow = "hidden";
-        });
-      });
-    })
-    .catch(err => console.error("Failed to load forms.json:", err));
-}
-
-if (closeBtn) {
-  closeBtn.onclick = () => {
-    modal.style.display = "none";
-    frame.src = "";
-    document.body.style.overflow = "auto";
-  };
 }
