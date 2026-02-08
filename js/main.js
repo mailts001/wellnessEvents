@@ -1,65 +1,48 @@
-const montageContainer = document.getElementById('montage-container');
+const container = document.getElementById('montage-container');
 
-// ==== STEP 1: Fetch the photo list from JSON ====
-fetch('media/photos.json')
-  .then(response => response.json())
-  .then(photos => {
+fetch('./media/media.json')
+  .then(res => res.json())
+  .then(mediaList => {
 
-    // Add videos here
-    const videos = [
-      'media/videos/video1.mp4',
-      'media/videos/video2.mp4'
-    ];
+    let index = 0;
 
-    // Combine photos + videos
-    const mediaList = [...photos, ...videos];
+    function playNext() {
+      container.innerHTML = '';
 
-    // ==== STEP 2: Slideshow logic ====
-    let currentIndex = 0;
+      const item = mediaList[index];
+      let el;
 
-    function showNextMedia() {
-      montageContainer.innerHTML = ''; // Clear previous
+      if (item.type === "video") {
+        el = document.createElement('video');
+        el.src = item.src;
+        el.autoplay = true;
+        el.muted = true;
+        el.playsInline = true;
+        el.style.width = "100%";
+        el.style.height = "65vh";
+        el.style.objectFit = "cover";
 
-      const currentMedia = mediaList[currentIndex];
-      let element;
-
-      if (currentMedia.endsWith('.mp4')) {
-        // Video element
-        element = document.createElement('video');
-        element.src = currentMedia;
-        element.autoplay = true;
-        element.muted = true;
-        element.playsInline = true;
-        element.style.width = '100%';
-        element.style.height = '60vh';
-        element.style.objectFit = 'cover';
-
-        element.addEventListener('ended', () => {
-          currentIndex = (currentIndex + 1) % mediaList.length;
-          showNextMedia();
-        });
+        el.onended = () => {
+          index = (index + 1) % mediaList.length;
+          playNext();
+        };
 
       } else {
-        // Image element
-        element = document.createElement('img');
-        element.src = currentMedia;
-        element.style.width = '100%';
-        element.style.height = '60vh';
-        element.style.objectFit = 'cover';
+        el = document.createElement('img');
+        el.src = item.src;
+        el.style.width = "100%";
+        el.style.height = "65vh";
+        el.style.objectFit = "cover";
 
         setTimeout(() => {
-          currentIndex = (currentIndex + 1) % mediaList.length;
-          showNextMedia();
-        }, 3000); // 3 seconds per photo
+          index = (index + 1) % mediaList.length;
+          playNext();
+        }, 3000);
       }
 
-      montageContainer.appendChild(element);
+      container.appendChild(el);
     }
 
-    // ==== STEP 3: Start the montage ====
-    showNextMedia();
-
+    playNext();
   })
-  .catch(err => {
-    console.error('Failed to load photos.json', err);
-  });
+  .catch(err => console.error("media.json failed to load:", err));

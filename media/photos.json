@@ -1,5 +1,8 @@
 [
-  "media/photos/photo1.jpg",
-  "media/photos/photo2.jpg",
-  "media/photos/photo3.jpg"
+  { "type": "image", "src": "media/photos/photo1.jpg" },
+  { "type": "image", "src": "media/photos/photo2.jpg" },
+  { "type": "image", "src": "media/photos/photo3.jpg" },
+
+  { "type": "video", "src": "media/videos/video1.mp4" },
+  { "type": "video", "src": "media/videos/video2.mp4" }
 ]
