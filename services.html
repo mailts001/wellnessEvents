@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Services</title>
+  <title>Services & Surveys</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,36 +15,19 @@
   </nav>
 
   <main class="services">
-    <h1>Our Services & Classes</h1>
-    <div class="service-card">
-      <h2>Private Coaching</h2>
-      <p>Custom sessions tailored for your needs.</p>
-      <a href="mailto:info@example.com" class="btn">Contact Us</a>
+    <h1>Our Services & Surveys</h1>
+    <div id="servicesContainer" class="services-grid">
+      <!-- Cards generated dynamically from JSON -->
     </div>
-
-    <div class="service-card">
-      <h2>Group Classes</h2>
-      <p>Join our weekly classes for yoga, meditation, and more.</p>
-      <a href="mailto:info@example.com" class="btn">Contact Us</a>
-    </div>
-
-    <section class="form-section">
-  <h2>Customize Your Session</h2>
-  <p>Tell us your needs and we will contact you.</p>
-  <p>Alternatively, complete the following diagnostic survey for us to tell you what you may need.</p>
-
-  <div class="form-container">
-    <iframe
-      src="https://docs.google.com/forms/d/e/1FAIpQLSc_NgTPf5qBUuVENrA2I6_hSNDOhy_bo6ejlvZPRyDI7KxPCA/viewform?embedded=true"
-      frameborder="0"
-      marginheight="0"
-      marginwidth="0"
-      loading="lazy">
-    </iframe>
-  </div>
-</section>
-
   </main>
+
+  <!-- Fullscreen Form Modal -->
+  <div id="formModal" class="form-modal">
+    <div class="form-header">
+      <span id="closeForm">✕</span>
+    </div>
+    <iframe id="formFrame"></iframe>
+  </div>
 
   <script src="js/main.js"></script>
 </body>

@@ -1,0 +1,7 @@
+[
+  { "type": "image", "src": "media/photos/meditation1.jpg" },
+  { "type": "image", "src": "media/photos/yoga2.jpg" },
+  { "type": "video", "src": "media/videos/breathwork.mp4" },
+  { "type": "video", "src": "media/videos/soundbath.mp4" },
+  { "type": "video", "src": "media/videos/yoga3.mp4" }
+]
