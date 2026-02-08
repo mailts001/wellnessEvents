@@ -30,7 +30,7 @@ if (montageContainer) {
           el = document.createElement('img');
           el.src = item.src;
           el.style.width = "100%";
-          el.style.height = "80vh";
+          el.style.height = "65vh";
           el.style.objectFit = "cover";
 
           setTimeout(() => {
