@@ -61,12 +61,31 @@ body {
 .landing-video,
 #montage-container {
   width: 100%;
-  height: 100%;
   position: relative;
   overflow: hidden;
 }
 
-.landing-video video {
+#montage-container {
+  height: 100vh;
+  background: black;
+}
+
+/* blurred cinematic fill */
+.media-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(35px) brightness(0.6);
+  transform: scale(1.15);
+}
+
+/* actual media */
+.media-main {
+  position: absolute;
+  inset: 0;
+  margin: auto;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -134,57 +153,57 @@ th {
   max-width: 900px;
 }
 
-/* =========================
-   Form Container (Inline / Modal)
-========================= */
-.form-container {
-  position: relative;
-  width: 100%;
-  height: 80vh;
-  overflow: hidden;
-}
+/* ==========================================================
+   MOBILE SAFE GOOGLE FORM MODAL
+========================================================== */
 
-.form-container iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-/* Fullscreen Form Modal */
-.form-modal {
+#formModal {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
-  height: 100%;
-  background: #fff;
+  height: 100dvh;
+  background: rgba(0,0,0,0.65);
   display: none;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   z-index: 9999;
-  overflow: hidden;
 }
 
-.form-modal iframe {
+.modal-content {
+  position: relative;
+  width: min(900px, 96%);
+  height: min(95dvh, 920px);
+  background: white;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+}
+
+#formFrame {
   flex: 1;
   width: 100%;
-  height: 100%;
   border: none;
-}
-
-.form-header {
-  height: 50px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 10px;
-  background: #fff;
-  border-bottom: 1px solid #eee;
 }
 
 #closeForm {
-  font-size: 26px;
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  z-index: 10;
+  background: #111;
+  color: white;
+  border: none;
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  font-size: 22px;
   cursor: pointer;
-  padding: 6px 12px;
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 /* =========================
@@ -215,104 +234,24 @@ th {
     padding: 15px;
   }
 
-  #montage-container,
-  .landing-video {
-    height: 50vh;
-  }
-
-  .form-container {
-    height: 70vh;
+  #montage-container {
+    height: 65vh;
   }
 }
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-  padding: 20px;
+
+/* small phones full screen modal */
+@media (max-width: 600px) {
+  .modal-content {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  #closeForm {
+    top: 14px;
+    right: 14px;
+    width: 44px;
+    height: 44px;
+    font-size: 26px;
+  }
 }
-
-.service-card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  text-align: center;
-}
-
-.btn {
-  background: #4a7c7c;
-  color: #fff;
-  padding: 12px 18px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-/* Modal */
-.form-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #fff;
-  display: none;
-  flex-direction: column;
-  z-index: 9999;
-}
-
-.form-modal iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.form-header {
-  height: 50px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-#closeForm {
-  font-size: 26px;
-  cursor: pointer;
-  padding: 6px 12px;
-}
-/* ===== HOME MONTAGE RESPONSIVE DISPLAY ===== */
-
-/* ===== CINEMATIC EDGE-TO-EDGE MEDIA ===== */
-
-#montage-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-  background: black;
-}
-
-/* blurred background layer */
-.media-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(35px) brightness(0.6);
-  transform: scale(1.15);
-}
-
-/* real media */
-.media-main {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-
