@@ -133,93 +133,57 @@
 </main>
 
 <script>
-// ================= SETTINGS =================
-const username = "yogandrea";
-const repo = "Wellness";
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynn2lIa8I--zwis12YttudV00gPyZXmAsW_m8h1z14o3zfj1ScMK76Q6ZKl7UySo1N/exec";
-const folder = "media/Events";
+// ================= IMAGE LIST =================
+// Directly reference all JPGs in media/Events
+const images = [
+  "media/Events/event1.jpg",
+  "media/Events/event2.jpg",
+  "media/Events/event3.jpg"
+  // add more filenames here as you upload them
+];
 
-const apiURL = `https://api.github.com/repos/${username}/${repo}/contents/${folder}`;
-
-let images = [];        // array of download_url strings
-let currentIndex = 0;   // current gallery index
-
-// elements
+let currentIndex = 0;
 const imgEl = document.getElementById("galleryImage");
 
-// ================= LOAD IMAGES =================
-async function loadImages(){
-    try{
-        const res = await fetch(apiURL);
-        const data = await res.json();
-
-        // accept jpg, jpeg, png only and store URLs
-        images = data
-            .filter(f => /\.(jpg|jpeg|png)$/i.test(f.name))
-            .map(f => f.download_url);
-
-        if(images.length === 0){
-            imgEl.src = "";
-            return;
-        }
-
-        // preload all images
-        await Promise.all(images.map(src => preloadImage(src)));
-
-        // start with first image (or newest last)
-        currentIndex = 0;
-        showImage(currentIndex);
-
-    } catch(err){
-        console.error("Unable to load images", err);
-        imgEl.src = "";
-    }
-}
-
-// preload function
-function preloadImage(src){
-    return new Promise(resolve=>{
-        const img = new Image();
-        img.onload = resolve;
-        img.src = src;
-    });
-}
+// preload images
+images.forEach(src => {
+    const img = new Image();
+    img.src = src;
+});
 
 // show image
 function showImage(i){
     imgEl.src = images[i];
 }
 
-// ================= NAVIGATION =================
+// navigation
 document.getElementById("prevBtn").onclick = () => {
-    if(images.length === 0) return;
     currentIndex = (currentIndex - 1 + images.length) % images.length;
     showImage(currentIndex);
 };
-
 document.getElementById("nextBtn").onclick = () => {
-    if(images.length === 0) return;
     currentIndex = (currentIndex + 1) % images.length;
     showImage(currentIndex);
 };
 
-// ================= SWIPE SUPPORT =================
+// swipe support for mobile
 let startX = 0;
 imgEl.addEventListener("touchstart", e => startX = e.touches[0].clientX);
 imgEl.addEventListener("touchend", e => {
-    let dx = e.changedTouches[0].clientX - startX;
+    const dx = e.changedTouches[0].clientX - startX;
     if(Math.abs(dx) > 40){
         if(dx > 0) document.getElementById("prevBtn").click();
         else document.getElementById("nextBtn").click();
     }
 });
 
-// ================= FULLSCREEN ZOOM =================
+// tap to fullscreen zoom
 imgEl.addEventListener("click", () => {
     if(imgEl.requestFullscreen) imgEl.requestFullscreen();
 });
 
 // ================= GOOGLE SHEET SUBMIT =================
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynn2lIa8I--zwis12YttudV00gPyZXmAsW_m8h1z14o3zfj1ScMK76Q6ZKl7UySo1N/exec";
 document.getElementById("signupForm").addEventListener("submit", async function(e){
     e.preventDefault();
 
@@ -258,9 +222,8 @@ document.getElementById("signupForm").addEventListener("submit", async function(
     }
 });
 
-// ================= INITIALIZE GALLERY =================
-loadImages();
-
+// show first image
+showImage(currentIndex);
 </script>
 
 </body>
