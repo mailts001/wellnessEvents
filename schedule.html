@@ -118,7 +118,7 @@
 
   <!-- Gallery -->
   <div class="gallery-wrapper">
-    <h2>Events Gallery</h2>
+    <h2>Event Gallery</h2>
     <div class="gallery-container">
       <button id="prevBtn">◀</button>
       <div class="gallery-frame">
@@ -141,8 +141,8 @@ const folder = "media/Events";
 
 const apiURL = `https://api.github.com/repos/${username}/${repo}/contents/${folder}`;
 
-let images = [];
-let currentIndex = 0;
+let images = [];        // array of download_url strings
+let currentIndex = 0;   // current gallery index
 
 // elements
 const imgEl = document.getElementById("galleryImage");
@@ -153,17 +153,21 @@ async function loadImages(){
         const res = await fetch(apiURL);
         const data = await res.json();
 
-        // accept jpg, jpeg, png (case-insensitive)
-        images = data.filter(f => /\.(jpg|jpeg|png)$/i.test(f.name));
+        // accept jpg, jpeg, png only and store URLs
+        images = data
+            .filter(f => /\.(jpg|jpeg|png)$/i.test(f.name))
+            .map(f => f.download_url);
 
         if(images.length === 0){
-            imgEl.src = "";  // or set placeholder
+            imgEl.src = "";
             return;
         }
 
-        currentIndex = images.length - 1; // start with newest image
+        // preload all images
+        await Promise.all(images.map(src => preloadImage(src)));
 
-        await preloadImage(images[currentIndex].download_url);
+        // start with first image (or newest last)
+        currentIndex = 0;
         showImage(currentIndex);
 
     } catch(err){
@@ -172,7 +176,7 @@ async function loadImages(){
     }
 }
 
-// preload to prevent blank flash
+// preload function
 function preloadImage(src){
     return new Promise(resolve=>{
         const img = new Image();
@@ -181,25 +185,26 @@ function preloadImage(src){
     });
 }
 
+// show image
 function showImage(i){
-    imgEl.src = images[i].download_url;
+    imgEl.src = images[i];
 }
 
 // ================= NAVIGATION =================
 document.getElementById("prevBtn").onclick = () => {
-    if(images.length===0) return;
-    currentIndex = (currentIndex-1 + images.length) % images.length;
+    if(images.length === 0) return;
+    currentIndex = (currentIndex - 1 + images.length) % images.length;
     showImage(currentIndex);
 };
 
 document.getElementById("nextBtn").onclick = () => {
-    if(images.length===0) return;
-    currentIndex = (currentIndex+1) % images.length;
+    if(images.length === 0) return;
+    currentIndex = (currentIndex + 1) % images.length;
     showImage(currentIndex);
 };
 
 // ================= SWIPE SUPPORT =================
-let startX=0;
+let startX = 0;
 imgEl.addEventListener("touchstart", e => startX = e.touches[0].clientX);
 imgEl.addEventListener("touchend", e => {
     let dx = e.changedTouches[0].clientX - startX;
@@ -253,8 +258,9 @@ document.getElementById("signupForm").addEventListener("submit", async function(
     }
 });
 
-// load gallery
+// ================= INITIALIZE GALLERY =================
 loadImages();
+
 </script>
 
 </body>
