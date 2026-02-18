@@ -8,19 +8,60 @@
 
 <style>
 
+/* ===== Container for signup + gallery ===== */
+.events-container{
+    display:flex;
+    flex-wrap:wrap;  /* stack on small screens */
+    gap:24px;
+    justify-content:center;
+    align-items:flex-start;
+    margin-top:30px;
+}
+
+/* ===== Signup Box ===== */
+.signup-box{
+    flex:1 1 300px;  /* grows, shrinks, minimum 300px */
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+.signup-box input{
+    width:95%;
+    padding:10px;
+    margin:8px 0;
+}
+
+.submit-btn{
+    background:#4CAF50;
+    color:white;
+    border:none;
+    padding:12px;
+    width:95%;
+    cursor:pointer;
+}
+
+.success{ margin-top:10px; font-weight:bold; }
+
+/* ===== Gallery Wrapper ===== */
+.gallery-wrapper{
+    flex:2 1 500px;  /* larger area for gallery */
+}
+
 /* ===== Gallery Layout ===== */
 .gallery-container{
     display:flex;
     justify-content:center;
     align-items:center;
     gap:12px;
-    margin-top:25px;
+    margin-top:15px;
 }
 
 .gallery-frame{
-    width:90%;
+    width:100%;
     max-width:850px;
-    height:520px;
+    height:min(70vh,520px);
     background:#111;
     border-radius:12px;
     display:flex;
@@ -47,43 +88,6 @@
     border:1px solid #ddd;
 }
 
-/* latest image */
-.latest-img{
-    max-width:90%;
-    max-height:500px;
-    object-fit:contain;
-    background:#111;
-    padding:8px;
-    border-radius:14px;
-}
-
-/* signup */
-.signup-box{
-    margin-top:40px;
-    background:white;
-    padding:20px;
-    max-width:420px;
-    border-radius:12px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.15);
-}
-
-.signup-box input{
-    width:95%;
-    padding:10px;
-    margin:8px 0;
-}
-
-.submit-btn{
-    background:#4CAF50;
-    color:white;
-    border:none;
-    padding:12px;
-    width:100%;
-    cursor:pointer;
-}
-
-.success{ margin-top:10px; font-weight:bold; }
-
 </style>
 </head>
 
@@ -98,30 +102,32 @@
 
 <main class="schedule">
 
-<h1>Upcoming Events</h1>
+<!-- ================= SIDE-BY-SIDE SIGNUP + GALLERY ================= -->
+<div class="events-container">
 
-<!-- Latest -->
+  <!-- Registration Form -->
+  <div class="signup-box">
+    <h2>Register Interest</h2>
+    <form id="signupForm">
+      <input type="text" id="name" placeholder="Your Name" required>
+      <input type="email" id="email" placeholder="Your Email" required>
+      <button class="submit-btn">Submit</button>
+      <div class="success" id="msg"></div>
+    </form>
+  </div>
 
-<!-- Gallery -->
-<div class="gallery-container">
-    <button id="prevBtn">◀</button>
-
-    <div class="gallery-frame">
-        <img id="galleryImage">
+  <!-- Gallery -->
+  <div class="gallery-wrapper">
+    <h2>Events Gallery</h2>
+    <div class="gallery-container">
+      <button id="prevBtn">◀</button>
+      <div class="gallery-frame">
+        <img id="galleryImage" alt="Event Photo">
+      </div>
+      <button id="nextBtn">▶</button>
     </div>
+  </div>
 
-    <button id="nextBtn">▶</button>
-</div>
-
-<!-- Signup -->
-<div class="signup-box">
-<h2>Register Interest</h2>
-<form id="signupForm">
-<input type="text" id="name" placeholder="Your Name" required>
-<input type="email" id="email" placeholder="Your Email" required>
-<button class="submit-btn">Submit</button>
-<div class="success" id="msg"></div>
-</form>
 </div>
 
 </main>
@@ -135,50 +141,43 @@ const folder = "media/Events";
 
 const apiURL = `https://api.github.com/repos/${username}/${repo}/contents/${folder}`;
 
-let images=[];
-let currentIndex=0;
+let images = [];
+let currentIndex = 0;
 
 // elements
 const imgEl = document.getElementById("galleryImage");
-const latestBox = document.getElementById("latest-event");
 
 // ================= LOAD IMAGES =================
 async function loadImages(){
-try{
-    const res = await fetch(apiURL);
-    const data = await res.json();
+    try{
+        const res = await fetch(apiURL);
+        const data = await res.json();
 
-    // accept jpg jpeg png (case insensitive)
-    images = data.filter(f =>
-        /\.(jpg|jpeg|png)$/i.test(f.name)
-    );
+        // accept jpg, jpeg, png (case-insensitive)
+        images = data.filter(f => /\.(jpg|jpeg|png)$/i.test(f.name));
 
-    if(images.length===0){
-        latestBox.innerText="No images uploaded yet";
-        return;
+        if(images.length === 0){
+            imgEl.src = "";  // or set placeholder
+            return;
+        }
+
+        currentIndex = images.length - 1; // start with newest image
+
+        await preloadImage(images[currentIndex].download_url);
+        showImage(currentIndex);
+
+    } catch(err){
+        console.error("Unable to load images", err);
+        imgEl.src = "";
     }
-
-    // newest = last commit (GitHub returns chronological)
-    currentIndex = images.length - 1;
-
-    // latest preview
-    latestBox.innerHTML =
-      `<img src="${images[currentIndex].download_url}" class="latest-img">`;
-
-    await preloadImage(images[currentIndex].download_url);
-    showImage(currentIndex);
-
-}catch(err){
-    latestBox.innerText="Unable to load images";
-}
 }
 
-// preload prevents blank flash
+// preload to prevent blank flash
 function preloadImage(src){
     return new Promise(resolve=>{
-        const img=new Image();
-        img.onload=resolve;
-        img.src=src;
+        const img = new Image();
+        img.onload = resolve;
+        img.src = src;
     });
 }
 
@@ -187,72 +186,76 @@ function showImage(i){
 }
 
 // ================= NAVIGATION =================
-document.getElementById("prevBtn").onclick=()=>{
+document.getElementById("prevBtn").onclick = () => {
     if(images.length===0) return;
-    currentIndex = (currentIndex-1+images.length)%images.length;
+    currentIndex = (currentIndex-1 + images.length) % images.length;
     showImage(currentIndex);
 };
 
-document.getElementById("nextBtn").onclick=()=>{
+document.getElementById("nextBtn").onclick = () => {
     if(images.length===0) return;
-    currentIndex = (currentIndex+1)%images.length;
+    currentIndex = (currentIndex+1) % images.length;
     showImage(currentIndex);
 };
 
 // ================= SWIPE SUPPORT =================
 let startX=0;
-imgEl.addEventListener("touchstart",e=>startX=e.touches[0].clientX);
-imgEl.addEventListener("touchend",e=>{
-    let dx=e.changedTouches[0].clientX-startX;
-    if(Math.abs(dx)>40){
-        if(dx>0) document.getElementById("prevBtn").click();
+imgEl.addEventListener("touchstart", e => startX = e.touches[0].clientX);
+imgEl.addEventListener("touchend", e => {
+    let dx = e.changedTouches[0].clientX - startX;
+    if(Math.abs(dx) > 40){
+        if(dx > 0) document.getElementById("prevBtn").click();
         else document.getElementById("nextBtn").click();
     }
 });
 
 // ================= FULLSCREEN ZOOM =================
-imgEl.addEventListener("click",()=>{
+imgEl.addEventListener("click", () => {
     if(imgEl.requestFullscreen) imgEl.requestFullscreen();
 });
 
 // ================= GOOGLE SHEET SUBMIT =================
 document.getElementById("signupForm").addEventListener("submit", async function(e){
-e.preventDefault();
+    e.preventDefault();
 
-const name=document.getElementById("name").value.trim();
-const email=document.getElementById("email").value.trim();
-const msg=document.getElementById("msg");
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const msg = document.getElementById("msg");
 
-if(!name || !email){
-    msg.innerText="Please fill all fields";
-    msg.style.color="red";
-    return;
-}
+    if(!name || !email){
+        msg.innerText = "Please fill all fields";
+        msg.style.color = "red";
+        return;
+    }
 
-msg.innerText="Submitting...";
-msg.style.color="black";
+    msg.innerText = "Submitting...";
+    msg.style.color = "black";
 
-try{
-await fetch(SCRIPT_URL,{
-    method:"POST",
-    mode:"no-cors",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-        name:name,
-        email:email,
-        page:"schedule"
-    })
+    try{
+        await fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type":"application/json" },
+            body: JSON.stringify({
+                name:name,
+                email:email,
+                page:"schedule"
+            })
+        });
+
+        msg.innerText = "Registration received ✔";
+        msg.style.color = "green";
+        this.reset();
+
+    } catch(err){
+        msg.innerText = "Submission failed ❌";
+        msg.style.color = "red";
+    }
 });
 
-msg.innerText="Registration received ✔";
-msg.style.color="green";
-this.reset();
-
-}catch(err){
-msg.innerText="Submission failed ❌";
-msg.style.color="red";
-}
-});
-
+// load gallery
 loadImages();
 </script>
+
+</body>
+</html>
