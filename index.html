@@ -776,68 +776,34 @@
               }
             }
 
-            // Step 2: Send emails via EmailJS
-            // We send TWO separate calls:
-            //   Call A → student's email (their confirmation)
-            //   Call B → admin email (your notification)
+            // Step 2: Send emails via Supabase Edge Function
+            // Send separately so student gets their own email
             const fmtEmail = iso => new Date(iso).toLocaleString("en-SG", {
               weekday:"long", day:"numeric", month:"long", year:"numeric",
               hour:"2-digit", minute:"2-digit"
             });
 
-            const emailParams = {
+            const EDGE_URL = "https://utpwbrbpdyrwqlheaknm.supabase.co/functions/v1/super-worker";
+            const EDGE_HDR = {
+              "Content-Type":  "application/json",
+              "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0cHdicmJwZHlyd3FsaGVha25tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMzczNDEsImV4cCI6MjA5MDkxMzM0MX0.NThOb2kXgbz85s0kunWhSjblM8I_PjvE3byyhEzQB8U",
+            };
+            const emailBody = {
               student_name:  studentInfo.name,
-              student_phone: studentInfo.phone || "—",
+              student_email: studentInfo.email,
+              student_phone: studentInfo.phone || "",
               class_title:   classTitle,
-              class_type:    classType  || "—",
+              class_type:    classType || "",
               instructor:    c.instructor,
-              start_time:    fmtEmail(c.start_time),
-              end_time:      fmtEmail(c.end_time),
+              start_time:    c.start_time,
+              end_time:      c.end_time,
             };
 
-            // ── Call A: to student ────────────────────────────
-            try {
-              const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-                method:  "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  service_id:  EMAILJS_SERVICE_ID,
-                  template_id: EMAILJS_TEMPLATE_ID,
-                  user_id:     EMAILJS_PUBLIC_KEY,
-                  template_params: {
-                    ...emailParams,
-                    to_email: studentInfo.email,   // sends TO the student
-                  }
-                })
-              });
-              const txt = await res.text();
-              console.log(`[Email→Student] ${res.status}: ${txt}`);
-              // DEBUG — remove after confirming it works
-              alert(`Student email debug:\nStatus: ${res.status}\nResponse: ${txt}\nSent to: ${studentInfo.email}`);
-            } catch (e) {
-              console.warn("[Email→Student] failed:", e.message);
-            }
-
-            // ── Call B: to admin ──────────────────────────────
-            try {
-              const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-                method:  "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  service_id:  EMAILJS_SERVICE_ID,
-                  template_id: EMAILJS_TEMPLATE_ID,
-                  user_id:     EMAILJS_PUBLIC_KEY,
-                  template_params: {
-                    ...emailParams,
-                    to_email: ADMIN_EMAIL,         // sends TO admin
-                  }
-                })
-              });
-              const txt = await res.text();
-              console.log(`[Email→Admin] ${res.status}: ${txt}`);
-            } catch (e) {
-              console.warn("[Email→Admin] failed:", e.message);
-            }
+            // Fire and forget — don't block the UI
+            fetch(EDGE_URL, { method:"POST", headers:EDGE_HDR, body:JSON.stringify(emailBody) })
+              .then(r => r.json())
+              .then(d => console.log("[Email]", JSON.stringify(d)))
+              .catch(e => console.warn("[Email failed]", e.message));
 
             // Step 3: Show success
             btn.textContent      = "✅ Booked!";
