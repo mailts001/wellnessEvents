@@ -749,13 +749,22 @@
               .select("id").single();
 
             if (bookErr) {
+              // ── Issue 1: friendly duplicate message ──────────
               if (bookErr.code === "23505" || bookErr.message.includes("bookings_class_email_unique")) {
-                btn.disabled    = false;
-                btn.textContent = "Already Booked";
+                btn.disabled         = false;
+                btn.textContent      = "Already Booked";
                 btn.style.background = "#FF9800";
-                const cs = new Date(c.start_time).toLocaleDateString("default", { day:"numeric", month:"short" });
-                const ce = new Date(c.end_time).toLocaleDateString("default",   { day:"numeric", month:"short" });
-                alert(`Already registered! 📋\n\n"${classTitle}" — ${studentInfo.email} is already booked for this class.\n\nDate: ${cs === ce ? cs : cs + " – " + ce}`);
+                const classDate = new Date(c.start_time).toLocaleDateString("default", {
+                  weekday:"long", day:"numeric", month:"long", year:"numeric"
+                });
+                alert(
+                  `You're already registered for this class! 📋\n\n` +
+                  `Class: ${classTitle}\n` +
+                  `Date: ${classDate}\n` +
+                  `Email used: ${studentInfo.email}\n\n` +
+                  `Each class can only be booked once per person.\n` +
+                  `If you need to change your booking, please contact us directly.`
+                );
                 return;
               }
               if (bookErr.message.includes("column")) {
@@ -767,14 +776,28 @@
               }
             }
 
-            // Step 2: Send confirmation email via EmailJS
-            try {
-              const fmtEmail = iso => new Date(iso).toLocaleString("en-SG", {
-                weekday:"long", day:"numeric", month:"long", year:"numeric",
-                hour:"2-digit", minute:"2-digit"
-              });
+            // Step 2: Send emails via EmailJS
+            // We send TWO separate calls:
+            //   Call A → student's email (their confirmation)
+            //   Call B → admin email (your notification)
+            const fmtEmail = iso => new Date(iso).toLocaleString("en-SG", {
+              weekday:"long", day:"numeric", month:"long", year:"numeric",
+              hour:"2-digit", minute:"2-digit"
+            });
 
-              const emailRes = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+            const emailParams = {
+              student_name:  studentInfo.name,
+              student_phone: studentInfo.phone || "—",
+              class_title:   classTitle,
+              class_type:    classType  || "—",
+              instructor:    c.instructor,
+              start_time:    fmtEmail(c.start_time),
+              end_time:      fmtEmail(c.end_time),
+            };
+
+            // ── Call A: to student ────────────────────────────
+            try {
+              const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
                 method:  "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -782,41 +805,38 @@
                   template_id: EMAILJS_TEMPLATE_ID,
                   user_id:     EMAILJS_PUBLIC_KEY,
                   template_params: {
-                    to_email:      studentInfo.email,
-                    student_name:  studentInfo.name,
-                    student_phone: studentInfo.phone || "—",
-                    class_title:   classTitle,
-                    class_type:    classType  || "—",
-                    instructor:    c.instructor,
-                    start_time:    fmtEmail(c.start_time),
-                    end_time:      fmtEmail(c.end_time),
-                    admin_email:   ADMIN_EMAIL,
+                    ...emailParams,
+                    to_email: studentInfo.email,   // sends TO the student
                   }
                 })
               });
+              const txt = await res.text();
+              console.log(`[Email→Student] ${res.status}: ${txt}`);
+              // DEBUG — remove after confirming it works
+              alert(`Student email debug:\nStatus: ${res.status}\nResponse: ${txt}\nSent to: ${studentInfo.email}`);
+            } catch (e) {
+              console.warn("[Email→Student] failed:", e.message);
+            }
 
-              const emailStatus = emailRes.status;
-              const emailText   = await emailRes.text();
-
-              // ── DEBUG ALERT — remove once email is confirmed working ──
-              alert(
-                `Email debug:\n` +
-                `Status: ${emailStatus}\n` +
-                `Response: ${emailText}\n\n` +
-                `Service ID: ${EMAILJS_SERVICE_ID}\n` +
-                `Template ID: ${EMAILJS_TEMPLATE_ID}\n` +
-                `Public Key: ${EMAILJS_PUBLIC_KEY.slice(0,6)}...`
-              );
-              // ─────────────────────────────────────────────────────────
-
-              if (emailStatus === 200) {
-                console.log("[Email] Sent via EmailJS ✅");
-              } else {
-                console.warn("[Email] EmailJS error:", emailStatus, emailText);
-              }
-            } catch (emailErr) {
-              alert(`Email error: ${emailErr.message}`);
-              console.warn("[Email] EmailJS not reachable:", emailErr.message);
+            // ── Call B: to admin ──────────────────────────────
+            try {
+              const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  service_id:  EMAILJS_SERVICE_ID,
+                  template_id: EMAILJS_TEMPLATE_ID,
+                  user_id:     EMAILJS_PUBLIC_KEY,
+                  template_params: {
+                    ...emailParams,
+                    to_email: ADMIN_EMAIL,         // sends TO admin
+                  }
+                })
+              });
+              const txt = await res.text();
+              console.log(`[Email→Admin] ${res.status}: ${txt}`);
+            } catch (e) {
+              console.warn("[Email→Admin] failed:", e.message);
             }
 
             // Step 3: Show success
