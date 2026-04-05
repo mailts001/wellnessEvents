@@ -795,13 +795,27 @@
                 })
               });
 
-              if (emailRes.ok) {
+              const emailStatus = emailRes.status;
+              const emailText   = await emailRes.text();
+
+              // ── DEBUG ALERT — remove once email is confirmed working ──
+              alert(
+                `Email debug:\n` +
+                `Status: ${emailStatus}\n` +
+                `Response: ${emailText}\n\n` +
+                `Service ID: ${EMAILJS_SERVICE_ID}\n` +
+                `Template ID: ${EMAILJS_TEMPLATE_ID}\n` +
+                `Public Key: ${EMAILJS_PUBLIC_KEY.slice(0,6)}...`
+              );
+              // ─────────────────────────────────────────────────────────
+
+              if (emailStatus === 200) {
                 console.log("[Email] Sent via EmailJS ✅");
               } else {
-                const txt = await emailRes.text();
-                console.warn("[Email] EmailJS error:", emailRes.status, txt);
+                console.warn("[Email] EmailJS error:", emailStatus, emailText);
               }
             } catch (emailErr) {
+              alert(`Email error: ${emailErr.message}`);
               console.warn("[Email] EmailJS not reachable:", emailErr.message);
             }
 
