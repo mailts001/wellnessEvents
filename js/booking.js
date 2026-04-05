@@ -18,21 +18,23 @@ window.bookClass = async function({ classId, classTitle, classType, classStart, 
   btn.disabled    = true;
   btn.textContent = "Booking…";
 
-  try {
-    // ── Step 1: Check if already booked ──────────────────
-    const { data: existing, error: checkErr } = await supabase
-      .from("bookings")
-      .select("id")
-      .eq("class_id",      classId)
-      .eq("student_email", studentInfo.email)
-      .maybeSingle();
+  try { (never throws, never returns 409) ──
+    const { data: result, error: rpcErr } = await supabase
+      .rpc("safe_book_class", {
+        p_class_id:      classId,
+        p_student_name:  studentInfo.name,
+        p_student_email: studentInfo.email,
+        p_student_phone: studentInfo.phone || null
+      });
 
-    if (checkErr) {
-      console.warn("Check error:", checkErr.message);
-      // If check fails, still try to insert — worst case we get the constraint error
+    if (rpcErr) {
+      btn.disabled    = false;
+      btn.textContent = "Book this class";
+      alert("Booking failed: " + rpcErr.message);
+      return;
     }
 
-    if (existing) {
+    if (result && result.reason === "duplicate") {
       btn.disabled         = false;
       btn.textContent      = "Already Booked";
       btn.style.background = "#FF9800";
@@ -47,34 +49,6 @@ window.bookClass = async function({ classId, classTitle, classType, classStart, 
         `Each class can only be booked once per person.\n` +
         `To change your booking, please contact us directly.`
       );
-      return;
-    }
-
-    // ── Step 2: Insert booking ────────────────────────────
-    const { error: insertErr } = await supabase
-      .from("bookings")
-      .insert([{
-        class_id:      classId,
-        student_name:  studentInfo.name,
-        student_email: studentInfo.email,
-        student_phone: studentInfo.phone || null
-      }]);
-
-    if (insertErr) {
-      btn.disabled    = false;
-      const isDup = insertErr.message && (
-        insertErr.message.includes("duplicate") ||
-        insertErr.message.includes("bookings_class_email_unique") ||
-        insertErr.code === "23505"
-      );
-      if (isDup) {
-        btn.textContent      = "Already Booked";
-        btn.style.background = "#FF9800";
-        alert(`You're already registered for this class!\n\nEmail: ${studentInfo.email}\n\nEach class can only be booked once per person.`);
-      } else {
-        btn.textContent = "Book this class";
-        alert("Booking failed: " + insertErr.message);
-      }
       return;
     }
 
