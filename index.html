@@ -415,7 +415,7 @@
   </script>
 
   <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.0/+esm";
 
     const supabase = createClient(
       "https://utpwbrbpdyrwqlheaknm.supabase.co",
@@ -737,55 +737,53 @@
           btn.textContent = "Booking…";
 
           try {
-            // Step 1: Save booking to Supabase
-            let bookErr = null;
-            try {
-              const { error } = await supabase
-                .from("bookings")
-                .insert([{
-                  class_id:      c.id,
-                  student_name:  studentInfo.name,
-                  student_email: studentInfo.email,
-                  student_phone: studentInfo.phone || null
-                }]);
-              bookErr = error;
-            } catch (insertEx) {
-              // Supabase throws on 409 conflict in some client versions
-              // Treat it as a bookErr so our duplicate check works
-              bookErr = {
-                code:    insertEx.code    || "23505",
-                message: insertEx.message || "duplicate key value"
-              };
+            // Step 1: Check if already booked BEFORE inserting
+            const { data: existing } = await supabase
+              .from("bookings")
+              .select("id")
+              .eq("class_id", c.id)
+              .eq("student_email", studentInfo.email)
+              .maybeSingle();
+
+            if (existing) {
+              btn.disabled         = false;
+              btn.textContent      = "Already Booked";
+              btn.style.background = "#FF9800";
+              const classDate = new Date(c.start_time).toLocaleDateString("default", {
+                weekday:"long", day:"numeric", month:"long", year:"numeric"
+              });
+              alert(
+                `You're already registered for this class! 📋\n\n` +
+                `Class: ${classTitle}\n` +
+                `Date: ${classDate}\n` +
+                `Email used: ${studentInfo.email}\n\n` +
+                `Each class can only be booked once per person.\n` +
+                `To change your booking, please contact us directly.`
+              );
+              return;
             }
 
-            if (bookErr) {
+            // Step 2: Safe to insert — not a duplicate
+            const { error: insertErr } = await supabase
+              .from("bookings")
+              .insert([{
+                class_id:      c.id,
+                student_name:  studentInfo.name,
+                student_email: studentInfo.email,
+                student_phone: studentInfo.phone || null
+              }]);
+
+            if (insertErr) {
               btn.disabled    = false;
-
-              // ── Friendly duplicate message ───────────────────
-              const isDuplicate = bookErr.code === "23505"
-                || (bookErr.message && bookErr.message.includes("duplicate"))
-                || (bookErr.message && bookErr.message.includes("bookings_class_email_unique"));
-
-              if (isDuplicate) {
+              btn.textContent = "Book this class";
+              // Catch any duplicate that slipped through (race condition)
+              if (insertErr.message && insertErr.message.includes("duplicate")) {
                 btn.textContent      = "Already Booked";
                 btn.style.background = "#FF9800";
-                const classDate = new Date(c.start_time).toLocaleDateString("default", {
-                  weekday:"long", day:"numeric", month:"long", year:"numeric"
-                });
-                alert(
-                  `You're already registered for this class! 📋\n\n` +
-                  `Class: ${classTitle}\n` +
-                  `Date: ${classDate}\n` +
-                  `Email used: ${studentInfo.email}\n\n` +
-                  `Each class can only be booked once per person.\n` +
-                  `To change your booking, please contact us directly.`
-                );
-                return;
+                alert(`You're already registered for this class!\n\nEmail: ${studentInfo.email}`);
+              } else {
+                alert("Booking failed: " + insertErr.message);
               }
-
-              // ── Any other insert error ───────────────────────
-              btn.textContent = "Book this class";
-              alert("Booking failed: " + bookErr.message);
               return;
             }
 
