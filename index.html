@@ -423,7 +423,7 @@
     );
 
     // ── EmailJS config ── replace these 3 values ─────────────
-    const EMAILJS_SERVICE_ID  = "service_6ptnn6y";   // e.g. "service_abc123"
+   const EMAILJS_SERVICE_ID  = "service_6ptnn6y";   // e.g. "service_abc123"
     const EMAILJS_TEMPLATE_ID = "template_ii0iyl7";  // e.g. "template_xyz789"
     const EMAILJS_PUBLIC_KEY  = "IAT9RRoctOp4m";   // e.g. "AbCdEfGhIjKlMnOpQ"
     const ADMIN_EMAIL         = "mailtsjp@gmail.com";
@@ -738,20 +738,24 @@
 
           try {
             // Step 1: Save booking to Supabase
-            const { error: bookErr } = await supabase
+            const { data: bookingData, error: bookErr } = await supabase
               .from("bookings")
               .insert([{
                 class_id:      c.id,
                 student_name:  studentInfo.name,
                 student_email: studentInfo.email,
                 student_phone: studentInfo.phone || null
-              }])
-              .select("id").single();
+              }]);
 
             if (bookErr) {
-              // ── Issue 1: friendly duplicate message ──────────
-              if (bookErr.code === "23505" || bookErr.message.includes("bookings_class_email_unique")) {
-                btn.disabled         = false;
+              btn.disabled    = false;
+              btn.textContent = "Book this class";
+
+              // ── Friendly duplicate message ───────────────────
+              if (bookErr.code === "23505"
+                || (bookErr.message && bookErr.message.includes("duplicate"))
+                || (bookErr.message && bookErr.message.includes("bookings_class_email_unique"))
+              ) {
                 btn.textContent      = "Already Booked";
                 btn.style.background = "#FF9800";
                 const classDate = new Date(c.start_time).toLocaleDateString("default", {
@@ -763,17 +767,14 @@
                   `Date: ${classDate}\n` +
                   `Email used: ${studentInfo.email}\n\n` +
                   `Each class can only be booked once per person.\n` +
-                  `If you need to change your booking, please contact us directly.`
+                  `To change your booking, please contact us directly.`
                 );
                 return;
               }
-              if (bookErr.message.includes("column")) {
-                const { error: fb } = await supabase.from("bookings")
-                  .insert([{ class_id: c.id, student_name: studentInfo.name }]);
-                if (fb) throw new Error(fb.message);
-              } else {
-                throw new Error(bookErr.message);
-              }
+
+              // ── Any other error ──────────────────────────────
+              alert("Booking failed: " + bookErr.message);
+              return;
             }
 
             // Step 2: Send emails via Supabase Edge Function
